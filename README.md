@@ -11,7 +11,7 @@ Maze Escape is a text-based game where you navigate through a maze-like grid to 
 - Clear rules and instructions provided at the start of the game.
 
 ## How to Play
-1. Compile and run the `maze_escape.c` file using a C compiler.
+1. Compile and run the `version.c` file using a C compiler.
 2. Follow the on-screen instructions to navigate through the maze.
 3. Use the controls to move the player character ('P') towards the exit ('E').
 4. Avoid obstacles ('X') and pitfalls ('*') to prevent losing the game.
