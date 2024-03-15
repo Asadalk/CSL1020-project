@@ -16,28 +16,6 @@ void rule(char m) {
     }
 }
 
-int check(int x, int y, char bd[15][15]) {
-    if (x == 15 && y == 15) {
-        return 1; // Found a path to the end
-    } else {
-        int k = 0; // Initialize k
-        for (int i = -1; i <= 1; i += 2) {
-            int a = x + i;
-            if (a < 15 && a >= 0 && bd[a][y] != 'X' && bd[a][y] != '*') {
-                k = k || check(a, y, bd); // Update k based on recursive call
-            }
-        }
-        for (int i = -1; i <= 1; i += 2) {
-            int a = y + i;
-            if (a < 15 && a >= 0 && bd[x][a] != 'X' && bd[x][a] != '*') {
-                k = k || check(x, a, bd); // Update k based on recursive call
-            }
-        }
-        return k; // Return k
-    }
-}
-
-
 // Function to initialize the game board
 void makeboard(char a[16][16], int l) {
     // Initialize all cells with '.'
@@ -72,11 +50,6 @@ void makeboard(char a[16][16], int l) {
             c++;
         }
     }
-    int k=check(0,0,bd);
-    if(k!=1)
-    makeboard(bd, l);
-    else
-    return 0;
 }
 
 // Function to print the game board
@@ -195,7 +168,7 @@ int main() {
             }
         }
         // Check if player reaches the end and handle level completion
-        if(s->x == 15 && s->y == 15 && l < 8) {
+        if(s->x == 15 && s->y == 15 && l < 7) {
             printf("Congratulations warrior you did it!\n");
             printf("Now let's go to next level and show who is the boss\n");
             printf("Write Y to go to next level or write anything I really don't like QUITTER : ");
