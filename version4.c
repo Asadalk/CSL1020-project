@@ -1,10 +1,14 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<time.h>
+#include<string.h>
+#include <stdbool.h>
+
+
 
 // Function to display game rules
-void rule(char m) {
-    if(m == '0') {
+void rule(char m[],int n) {
+    if(m[0] == '0' && m[1]=='\0') {
         printf("GAME RULES\n");
         printf("You will be placed at 1st position and you have to go to the last position in each level.\n");
         printf("If you lose before level 5 then you will have to restart the game from level 1.\n");
@@ -16,30 +20,8 @@ void rule(char m) {
     }
 }
 
-int check(int x, int y, char bd[16][16]) {
-    if (x == 15 && y == 15) {
-        return 1; // Found a path to the end
-    } else {
-        int k = 0; // Initialize k
-        for (int i = -1; i <= 1; i += 2) {
-            int a = x + i;
-            if (a < 15 && a >= 0 && bd[a][y] != 'X' && bd[a][y] != '*') {
-                k = k || check(a, y, bd); // Update k based on recursive call
-            }
-        }
-        for (int i = -1; i <= 1; i += 2) {
-            int a = y + i;
-            if (a < 15 && a >= 0 && bd[x][a] != 'X' && bd[x][a] != '*') {
-                k = k || check(x, a, bd); // Update k based on recursive call
-            }
-        }
-        return k; // Return k
-    }
-}
-
-
 // Function to initialize the game board
-int makeboard(char a[16][16], int l) {
+void makeboard(char a[16][16], int l) {
     // Initialize all cells with '.'
     for(int i = 0; i < 16; i++)
         for(int j = 0; j < 16; j++)
@@ -72,14 +54,13 @@ int makeboard(char a[16][16], int l) {
             c++;
         }
     }
-    return check(0,0,a);
 }
 
 // Function to print the game board
 void printboard(char a[16][16]) {
     for(int i = 0; i < 16; i++) {
         for(int j = 0; j < 16; j++) {
-            printf("%c", a[i][j]);
+            printf("%c ", a[i][j]);
         }
         printf("\n");
     }
@@ -91,17 +72,76 @@ typedef struct position {
     int y;
 } pos;
 
+// Function to check if there is a valid path to win the game
+bool isValidPath(char a[16][16], pos s) {
+    bool visited[16][16] = {false};
+    int queue[256][2];
+    int front = 0, rear = 0;
+
+    // Add starting position to the queue
+    queue[rear][0] = s.x;
+    queue[rear][1] = s.y;
+    rear++;
+
+    while (front != rear) {
+        int x = queue[front][0];
+        int y = queue[front][1];
+        front++;
+
+        // Check if the current position is the end point
+        if (x == 15 && y == 15) {
+            return true;
+        }
+
+        // Check adjacent positions
+        if (x > 0 && !visited[x - 1][y] && a[x - 1][y] != 'X' && a[x - 1][y] != '*') {
+            queue[rear][0] = x - 1;
+            queue[rear][1] = y;
+            rear++;
+            visited[x - 1][y] = true;
+        }
+        if (x < 15 && !visited[x + 1][y] && a[x + 1][y] != 'X' && a[x + 1][y] != '*') {
+            queue[rear][0] = x + 1;
+            queue[rear][1] = y;
+            rear++;
+            visited[x + 1][y] = true;
+        }
+        if (y > 0 && !visited[x][y - 1] && a[x][y - 1] != 'X' && a[x][y - 1] != '*') {
+            queue[rear][0] = x;
+            queue[rear][1] = y - 1;
+            rear++;
+            visited[x][y - 1] = true;
+        }
+        if (y < 15 && !visited[x][y + 1] && a[x][y + 1] != 'X' && a[x][y + 1] != '*') {
+            queue[rear][0] = x;
+            queue[rear][1] = y + 1;
+            rear++;
+            visited[x][y + 1] = true;
+        }
+    }
+
+    return false;
+}
+
+
+// Function to regenerate the game board
+void regenerateBoard(char a[16][16], int l, pos *s) {
+    makeboard(a, l);
+    s->x = 0;
+    s->y = 0;
+}
+
 // Function to handle player movement
-void movement(char a[16][16], char m, pos *s) {
+void movement(char a[16][16], char m[],int n, pos *s) {
     int u = s->x;
     int v = s->y;
-    if(m == 'a' || m=='A')
+    if((m[0] == 'a' || m[0]=='A') && m[1]=='\0')
         s->y = s->y - 1;
-    else if(m == 'd' || m=='D')
+    else if((m[0] == 'd' || m[0] =='D') && m[1]=='\0')
         s->y = s->y + 1;
-    else if(m == 's' || m=='S')
+    else if((m[0] == 's' || m[0] =='S') && m[1]=='\0')
         s->x = s->x + 1;
-    else if(m == 'w' || m=='W')
+    else if((m[0] == 'w' || m[0] =='W') && m[1]=='\0')
         s->x = s->x - 1;
 
     // Check boundaries and obstacles
@@ -130,42 +170,44 @@ void movement(char a[16][16], char m, pos *s) {
 // Main function
 int main() {
     int l = 1;
-    char m,bd[16][16];
+    char m[100],bd[16][16];
     printf("For rules of the game press 0\n");
-    while(makeboard(bd,l)!=1)
-    {
-        
-    }
+    makeboard(bd, l);
     pos step;
     step.x = 0;
     step.y = 0;
     pos *s;
     s = &step;
+    
     // Main game loop
     do {
+        if (!isValidPath(bd, *s)) {
+            regenerateBoard(bd, l, s);
+            continue;
+        }
         printboard(bd);
-        printf("Take your step : ");
-        scanf(" %c", &m);
+    printf("Take your step : ");
+        scanf(" %s", m);
         // Input validation loop
         do {
-            if(m == '0') {
-                rule(0);
-                scanf(" %c", &m);
+            if(m[0] == '0' && m[1]=='\0') {
+                rule(m,100);
+                scanf(" %s", m);
             }
-            else if(m != 's' && m != 'a' && m != 'd' && m != 'w' && m != 'S' && m != 'A' && m != 'D' && m != 'W') {
+            else if((m[0] != 's' && m[0] != 'a' && m[0] != 'd' && m[0] != 'w' && m[0] != 'S' && m[0] != 'A' && m[0] != 'D' && m[0] != 'W') || m[1]!='\0') {
                 printf("Wrong Input! type 0 to know rules OR Retake your step\n");
-                scanf(" %c", &m);
+                scanf(" %s", m);
             }
-        } while(m != 's' && m != 'a' && m != 'd' && m != 'w' && m != 'S' && m != 'A' && m != 'D' && m != 'W');
+        } while(m[0] != 's' && m[0] != 'a' && m[0] != 'd' && m[0] != 'w' && m[0] != 'S' && m[0] != 'A' && m[0] != 'D' && m[0] != 'W' && m[1]!='\0');
         // Handle player movement
-        movement(bd, m, s);
+        movement(bd, m,100, s);
 
         // Check if player hits a trap and handle game over condition
         if(bd[s->x][s->y] == '*' && l < 5) {
             printf("You have lost the game \n Write R to start again from level 1 OR write Q if you are a QUITTER : ");
-            char i;
-            scanf("  %c", &i);
-            if(i == 'R' || i == 'r') {
+            char i[100];
+            scanf("  %s", i);
+            if((i[0] == 'R' || i[0] == 'r')&& i[1]=='\0') {
                 printf("Go WARRIOR\n");
                 makeboard(bd, 1);
                 s->x = 0;
@@ -179,9 +221,9 @@ int main() {
         }
         else if(bd[s->x][s->y] == '*' && l >= 5) {
             printf("You have lost the game \n Write R to start again from level 5 OR write Q if you are a QUITTER : ");
-            char i;
-            scanf("  %c", &i);
-            if(i == 'R' || i == 'r') {
+            char i[100];
+            scanf("  %s", i);
+            if((i[0] == 'R' || i[0] == 'r')&& i[1]=='\0') {
                 printf("Go WARRIOR\n");
                 makeboard(bd, 5);
                 s->x = 0;
@@ -194,13 +236,13 @@ int main() {
             }
         }
         // Check if player reaches the end and handle level completion
-        if(s->x == 15 && s->y == 15 && l < 8) {
+        if(s->x == 15 && s->y == 15 && l < 7) {
             printf("Congratulations warrior you did it!\n");
             printf("Now let's go to next level and show who is the boss\n");
             printf("Write Y to go to next level or write anything I really don't like QUITTER : ");
-            char i;
-            scanf(" %c", &i);
-            if(i == 'Y'|| i == 'y') {
+            char i[100];
+            scanf(" %s", i);
+            if((i[0] == 'Y'|| i[0] == 'y') && i[1]=='\0') {
                 l++;
                 makeboard(bd, l);
                 s->x = 0;
